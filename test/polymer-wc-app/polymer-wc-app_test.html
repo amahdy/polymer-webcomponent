@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>offline-first-app test</title>
+    <title>polymer-wc-app test</title>
 
     <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../../web-component-tester/browser.js"></script>
 
-    <link rel="import" href="../../src/offline-first-app/offline-first-app.html">
+    <link rel="import" href="../../src/polymer-wc-app/polymer-wc-app.html">
   </head>
   <body>
 
@@ -25,26 +25,26 @@
         customElements.define(FakePersonSearch.is, FakePersonSearch);
       </script>
     </dom-module>
-    <dom-module id="fake-offline-grid">
+    <dom-module id="fake-person-grid">
       <template></template>
       <script>
-        class FakeOfflineGrid extends Polymer.Element {
-          static get is() { return 'fake-offline-grid'; }
+        class FakePersonGrid extends Polymer.Element {
+          static get is() { return 'fake-person-grid'; }
           fireSelect() {
-            this.dispatchEvent(new CustomEvent('on-select', {detail: "fake-offline-grid-select"}));
+            this.dispatchEvent(new CustomEvent('on-select', {detail: "fake-person-grid-select"}));
           }
           fireAdd() {
-            this.dispatchEvent(new CustomEvent('on-add', {detail: "fake-offline-grid-add"}));
+            this.dispatchEvent(new CustomEvent('on-add', {detail: "fake-person-grid-add"}));
           }
           fireStats() {
-            this.dispatchEvent(new CustomEvent('on-stats', {detail: "fake-offline-grid-stats"}));
+            this.dispatchEvent(new CustomEvent('on-stats', {detail: "fake-person-grid-stats"}));
           }
           update() {}
           create() {}
           delete() {}
           search() {}
         }
-        customElements.define(FakeOfflineGrid.is, FakeOfflineGrid);
+        customElements.define(FakePersonGrid.is, FakePersonGrid);
       </script>
     </dom-module>
     <dom-module id="fake-person-editor">
@@ -80,26 +80,26 @@
 
     <test-fixture id="Basic">
       <template>
-        <offline-first-app></offline-first-app>
+        <polymer-wc-app></polymer-wc-app>
       </template>
     </test-fixture>
 
     <script>
-      suite('offline-first-app', () => {
+      suite('polymer-wc-app', () => {
         let spy,
             element, elementShadowRoot, splitLayout,
-            search, offlineGrid, editor, chart;
+            search, personGrid, editor, chart;
 
         setup(() => {
           replace('person-search').with('fake-person-search');
-          replace('offline-grid').with('fake-offline-grid');
+          replace('person-grid').with('fake-person-grid');
           replace('person-editor').with('fake-person-editor');
           replace('person-chart').with('fake-person-chart');
 
           element = fixture('Basic');
           elementShadowRoot = element.shadowRoot;
           search = elementShadowRoot.getElementById('search');
-          offlineGrid = elementShadowRoot.getElementById('offlineGrid');
+          personGrid = elementShadowRoot.getElementById('personGrid');
           editor = elementShadowRoot.getElementById('editor');
           chart = elementShadowRoot.getElementById('chart');
         });
@@ -109,50 +109,50 @@
           assert.equal(splitLayout.id, 'topLayout');
         });
 
-        test('selecting in offline-grid passes value to person-editor', done => {
+        test('selecting in person-grid passes value to person-editor', done => {
           spy = sinon.spy(editor, 'setPerson');
-          offlineGrid.addEventListener('on-select', event => {
+          personGrid.addEventListener('on-select', event => {
             expect(spy.called).to.be.true;
-            assert.equal(event.detail, "fake-offline-grid-select");
+            assert.equal(event.detail, "fake-person-grid-select");
             done();
           });
-          offlineGrid.fireSelect();
+          personGrid.fireSelect();
         });
 
-        test('adding in offline-grid sets focus on editor', done => {
+        test('adding in person-grid sets focus on editor', done => {
           spy = sinon.spy(editor, 'setFocus');
-          offlineGrid.addEventListener('on-add', event => {
+          personGrid.addEventListener('on-add', event => {
             expect(spy.called).to.be.true;
-            assert.equal(event.detail, "fake-offline-grid-add");
+            assert.equal(event.detail, "fake-person-grid-add");
             done();
           });
-          offlineGrid.fireAdd();
+          personGrid.fireAdd();
         });
 
-        test('changing stats in offline-grid updates chart stats', done => {
+        test('changing stats in person-grid updates chart stats', done => {
           spy = sinon.spy(chart, 'updateStats');
-          offlineGrid.addEventListener('on-stats', event => {
+          personGrid.addEventListener('on-stats', event => {
             expect(spy.called).to.be.true;
-            assert.equal(event.detail, "fake-offline-grid-stats");
+            assert.equal(event.detail, "fake-person-grid-stats");
             done();
           });
           element.wide=true;
-          offlineGrid.fireStats();
+          personGrid.fireStats();
         });
 
-        test('changing stats in offline-grid does not update chart when hidden', done => {
+        test('changing stats in person-grid does not update chart when hidden', done => {
           spy = sinon.spy(chart, 'updateStats');
-          offlineGrid.addEventListener('on-stats', event => {
+          personGrid.addEventListener('on-stats', event => {
             expect(spy.called).to.be.false;
-            assert.equal(event.detail, "fake-offline-grid-stats");
+            assert.equal(event.detail, "fake-person-grid-stats");
             done();
           });
           element.wide=false;
-          offlineGrid.fireStats();
+          personGrid.fireStats();
         });
 
-        test('updating request from editor updates offline-grid', done => {
-          spy = sinon.spy(offlineGrid, 'update');
+        test('updating request from editor updates person-grid', done => {
+          spy = sinon.spy(personGrid, 'update');
           editor.addEventListener('on-update', event => {
             expect(spy.called).to.be.true;
             assert.equal(event.detail, "fake-person-editor-update");
@@ -161,8 +161,8 @@
           editor.fireUpdate();
         });
 
-        test('creating request from editor adds new person in offline-grid', done => {
-          spy = sinon.spy(offlineGrid, 'create');
+        test('creating request from editor adds new person in person-grid', done => {
+          spy = sinon.spy(personGrid, 'create');
           editor.addEventListener('on-create', event => {
             expect(spy.called).to.be.true;
             assert.equal(event.detail, "fake-person-editor-create");
@@ -171,8 +171,8 @@
           editor.fireCreate();
         });
 
-        test('creating request from editor adds new person in offline-grid', done => {
-          spy = sinon.spy(offlineGrid, 'create');
+        test('creating request from editor adds new person in person-grid', done => {
+          spy = sinon.spy(personGrid, 'create');
           editor.addEventListener('on-create', event => {
             expect(spy.called).to.be.true;
             assert.equal(event.detail, "fake-person-editor-create");
@@ -181,8 +181,8 @@
           editor.fireCreate();
         });
 
-        test('deleting request from editor delets person in offline-grid', done => {
-          spy = sinon.spy(offlineGrid, 'delete');
+        test('deleting request from editor delets person in person-grid', done => {
+          spy = sinon.spy(personGrid, 'delete');
           editor.addEventListener('on-delete', event => {
             expect(spy.called).to.be.true;
             assert.equal(event.detail, "fake-person-editor-delete");
@@ -191,8 +191,8 @@
           editor.fireDelete();
         });
 
-        test('searching request searches in offline-grid', done => {
-          spy = sinon.spy(offlineGrid, 'search');
+        test('searching request searches in person-grid', done => {
+          spy = sinon.spy(personGrid, 'search');
           search.addEventListener('on-find', event => {
             expect(spy.called).to.be.true;
             assert.equal(event.detail, "fake-person-search-find");

@@ -1,7 +1,7 @@
 {
-  "name": "offline-first-app",
-  "short_name": "offline-first-app",
-  "description": "Offline-First App with WebComponents",
+  "name": "polymer-wc-app",
+  "short_name": "polymer-wc-app",
+  "description": "Polymer App with WebComponents",
   "start_url": "/",
   "display": "standalone"
 }

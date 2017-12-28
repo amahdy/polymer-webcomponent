@@ -7,12 +7,12 @@
 
 <link rel="import" href="../../bower_components/vaadin-split-layout/vaadin-split-layout.html">
 
-<link rel="import" href="./offline-grid.html">
+<link rel="import" href="./person-grid.html">
 <link rel="import" href="./person-editor.html">
 <link rel="import" href="./person-search.html">
 <link rel="import" href="./person-chart.html">
 
-<dom-module id="offline-first-app">
+<dom-module id="polymer-wc-app">
   <template>
     <style>
       :host {
@@ -24,7 +24,7 @@
         height: 100%;
       }
 
-      #offlineGrid {
+      #personGrid {
         margin-left: 8px;
         margin-right: 8px;
         margin-bottom: 8px;
@@ -68,7 +68,7 @@
     <vaadin-split-layout orientation$="{{orientation}}" id="topLayout" theme="subtle">
       <div id="gridArea" wide-layout$="{{wide}}">
         <person-search id="search"></person-search>
-        <offline-grid id="offlineGrid"></offline-grid>
+        <person-grid id="personGrid"></person-grid>
       </div>
       <div id="editorArea" wide-layout$="{{wide}}">
         <person-editor id="editor"></person-editor>
@@ -78,8 +78,8 @@
   </template>
 
   <script>
-    class OfflineFirstApp extends Polymer.Element {
-      static get is() { return 'offline-first-app'; }
+    class PolymerWCApp extends Polymer.Element {
+      static get is() { return 'polymer-wc-app'; }
 
       static get properties() {
         return {
@@ -97,37 +97,37 @@
       ready() {
         super.ready();
 
-        this.$.offlineGrid.addEventListener('on-select', evt => {
+        this.$.personGrid.addEventListener('on-select', evt => {
           this.$.editor.setPerson(evt.detail);
         });
 
-        this.$.offlineGrid.addEventListener('on-add', evt => {
+        this.$.personGrid.addEventListener('on-add', evt => {
           this.$.editor.setFocus();
         });
 
-        this.$.offlineGrid.addEventListener('on-stats', evt => {
+        this.$.personGrid.addEventListener('on-stats', evt => {
           if(this.wide) {
             this.$.chart.updateStats(evt.detail);
           }
         });
 
         this.$.editor.addEventListener('on-update', evt => {
-          this.$.offlineGrid.update(evt.detail);
+          this.$.personGrid.update(evt.detail);
         });
 
         this.$.editor.addEventListener('on-create', evt => {
-          this.$.offlineGrid.create(evt.detail);
+          this.$.personGrid.create(evt.detail);
         });
 
         this.$.editor.addEventListener('on-delete', evt => {
-          this.$.offlineGrid.delete(evt.detail);
+          this.$.personGrid.delete(evt.detail);
         });
 
         this.$.search.addEventListener('on-find', evt => {
-          this.$.offlineGrid.search(evt.detail);
+          this.$.personGrid.search(evt.detail);
         });
       }
     }
-    customElements.define(OfflineFirstApp.is, OfflineFirstApp);
+    customElements.define(PolymerWCApp.is, PolymerWCApp);
   </script>
 </dom-module>

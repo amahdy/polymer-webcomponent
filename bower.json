@@ -1,6 +1,6 @@
 {
-  "name": "offline-first-app",
-  "description": "Offline-First App with WebComponents",
+  "name": "polymer-wc-app",
+  "description": "Polymer App with WebComponents",
   "main": "index.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",

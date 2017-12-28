@@ -4,23 +4,23 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>offline-grid test</title>
+    <title>person-grid test</title>
 
     <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../../web-component-tester/browser.js"></script>
 
-    <link rel="import" href="../../src/offline-first-app/offline-grid.html">
+    <link rel="import" href="../../src/polymer-wc-app/person-grid.html">
   </head>
   <body>
 
     <test-fixture id="Basic">
       <template>
-        <offline-grid></offline-grid>
+        <person-grid></person-grid>
       </template>
     </test-fixture>
 
     <script>
-      suite('offline-grid', () => {
+      suite('person-grid', () => {
         test('instantiating the element works', () => {
           const element = fixture('Basic');
           const elementShadowRoot = element.shadowRoot;

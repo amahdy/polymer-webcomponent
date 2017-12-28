@@ -15,7 +15,7 @@
 
 <link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
 
-<dom-module id="offline-grid">
+<dom-module id="person-grid">
   <template>
     <style>
       :host {
@@ -60,7 +60,7 @@
     <vaadin-grid
       id="lazyGrid"
       class="data-area"
-      aria-label="Offline Grid"
+      aria-label="Person Grid"
       data-provider="[[dataProvider]]"
       active-item="{{activeItem}}"
       selected-items="{{selectedItems}}"
@@ -144,8 +144,8 @@
   </template>
 
   <script>
-    class OfflineGrid extends Polymer.Element {
-      static get is() { return 'offline-grid'; }
+    class PersonGrid extends Polymer.Element {
+      static get is() { return 'person-grid'; }
 
       static get properties() {
         return {
@@ -530,6 +530,6 @@
         this.dispatchEvent(new CustomEvent('on-add'));
       }
     }
-    customElements.define(OfflineGrid.is, OfflineGrid);
+    customElements.define(PersonGrid.is, PersonGrid);
   </script>
 </dom-module>
