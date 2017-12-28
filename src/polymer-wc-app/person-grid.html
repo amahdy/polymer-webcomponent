@@ -1,10 +1,10 @@
 
-<script src="../../bower_components/pouchdb/dist/pouchdb.min.js"></script>
-<script src="../../bower_components/pouchdb-find/dist/pouchdb.find.min.js"></script>
 <script src="../../bower_components/jquery/dist/jquery.min.js"></script>
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+
+<link rel="import" href="../../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
 
 <link rel="import" href="../../bower_components/vaadin-valo-theme/vaadin-grid.html">
 <link rel="import" href="../../bower_components/vaadin-valo-theme/vaadin-button.html">
@@ -52,6 +52,7 @@
       }
     </style>
 
+    <app-localstorage-document id="staticStorage" key="data" data="{{data}}"></app-localstorage-document>
     <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
 
     <template is="dom-if" if="[[!size]]">
@@ -162,18 +163,6 @@
             observer: '_selectedItemsChanged',
           },
 
-          // Remote DB, running on a local instance of CouchDB.
-          remoteDB: {
-            type: PouchDB,
-            value: new PouchDB('http://localhost:5984/personsdb'),
-          },
-
-          // Local DB, the synched version of `remoteDB`
-          localDB: {
-            type: PouchDB,
-            value: new PouchDB('local_personsdb'),
-          },
-
           allDocs: Array, // All docs in the grid.
 
           // Size of total rows in the grid.
@@ -272,19 +261,21 @@
       }
 
       _installDemo() {
-        $.get('src/resources/data.json', data => {
-          this.data = data.result;
-          this.size = data.size;
-          this._loadData();
+        this.$.staticStorage.getStoredValue("data").then(localdata => {
+          this.data = localdata;
+          this.size = localdata.length;
+        }).catch(() => {
+          $.get('src/resources/data.json', data => {
+            this.data = data.result;
+            this.size = data.size;
+            this._loadData();
+          });
         });
       }
 
       _resetDemo() {
-        this.localDB.destroy().then(dest => {
-          location.href = "./";
-        }).catch(destErr => {
-          document.write("Can't destroy local database:\n" + destErr);
-        });
+        this.$.staticStorage.destroy();
+        location.href = "./";
       }
 
       _stateStatsChanged() {
@@ -313,22 +304,12 @@
       ready() {
         super.ready();
 
-        this._installDemo();
-
         // Check if demo reset is requested
         if(location.href.endsWith("?resetdemo")) {
           this._resetDemo();
         }
 
-        // Check if demo mode is requested
-        if(location.href.endsWith("?demo")) {
-          this._installDemo();
-        }
-
-        // Running in demo mode
-        if(location.href.endsWith("?rundemo")) {
-          this.demoMode = true;
-        }
+        this._installDemo();
       }
 
       update(newPerson) {

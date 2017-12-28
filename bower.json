@@ -5,8 +5,7 @@
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
     "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0",
-    "pouchdb": "^6.3.4",
-    "pouchdb-find": "^0.10.5",
+    "app-storage": "^2.0.2",
     "jquery": "^3.2.1",
     "iron-a11y-keys": "^2.0.0",
     "paper-toast": "^2.0.0",
