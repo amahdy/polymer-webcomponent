@@ -54,19 +54,19 @@
 
     <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
 
-    <template is="dom-if" if="{{!size}}">
+    <template is="dom-if" if="[[!size]]">
       <center class="data-area"><strong>No Contacts Found</strong></center>
     </template>
     <vaadin-grid
-      id="lazyGrid"
+      id="staticGrid"
       class="data-area"
       aria-label="Person Grid"
-      data-provider="[[dataProvider]]"
+      items="[[data]]"
       active-item="{{activeItem}}"
       selected-items="{{selectedItems}}"
       item-id-path="_id"
       size="[[size]]"
-      hidden$="{{!size}}">
+      hidden$="[[!size]]">
 
       <vaadin-grid-column class="main-col" wide-layout$="{{wide}}">
         <template class="header">Name</template>
@@ -149,9 +149,9 @@
 
       static get properties() {
         return {
-          demoMode: {
-            type: Boolean,
-            value: false
+          data: {
+            type: Array,
+            value: [],
           },
 
           activeItem: {
@@ -224,102 +224,58 @@
         if(this.searchValue) {
           this.search(this.searchValue, selectedPerson);
         }else {
-          this.$.lazyGrid.clearCache();
+          this.$.staticGrid.clearCache();
         }
         if(selectedPerson) {
-          this.$.lazyGrid._scrollToIndex(this._getSelectedItem().idx);
+          this.$.staticGrid._scrollToIndex(this._getSelectedItem().idx);
         }
       }
 
       _loadData() {
-        if(!this.demoMode)
-        PouchDB.sync(this.remoteDB, this.localDB, {
-          live: true,
-          retry: true,
-        });
 
-        // TODO: Sort items, but this is server-side issue
-        this.localDB.allDocs({endkey: '_design'}).then(eResult => {
-          this.localDB.allDocs({startkey: '_design\uffff'}).then(sResult => {
-            this.allDocs = eResult.rows.concat(sResult.rows);
+        for(let i=0; i<this.size; i++) {
+          // TODO: avoid keeping track of indexes
+          // https://github.com/vaadin/vaadin-grid/issues/1154
+          this.data[i].idx = i;
 
-            this.dataProvider = (params, callback) => {
-
-              let currentIndex = params.page * params.pageSize;
-              let usedDocs = this.searchValue ? this.searchResults : this.allDocs;
-              this.size = usedDocs.length;
-
-              // Construct docs starting from current index,
-              // and up to the requested length by Grid.
-              let currentDocs = usedDocs.slice(currentIndex, currentIndex+params.pageSize);
-
-              let data = [];
-              if(currentDocs.length > 0) {
-                this.localDB.bulkGet({
-                  docs: currentDocs,
-                }).then(json => {
-                  for(let i=0; i<json.results.length; i++) {
-                    data[i] = json.results[i].docs[0].ok;
-                    // TODO: avoid keeping track of indexes
-                    // https://github.com/vaadin/vaadin-grid/issues/1154
-                    data[i].idx = i + currentIndex;
-
-                    // Update stats
-                    if(this.stateStatsIds.indexOf(data[i]._id)<0) {
-                      this.stateStatsIds.push(data[i]._id);
-                      if(data[i].address.state) {
-                        if(this.stateStats[data[i].address.state]) {
-                          this.stateStats[data[i].address.state]++;
-                        }else {
-                          this.stateStats[data[i].address.state] = 1;
-                        }
-                      }else {
-                        if(this.stateStats["unknown"]) {
-                          this.stateStats["unknown"]++;
-                        }else {
-                          this.stateStats["unknown"] = 1;
-                        }
-                      }
-                    }
-
-                    // Hilight docs in search mode
-                    // if(this.searchValue && currentDocs[i].highlighting) {
-                    //   for (prop in currentDocs[i].highlighting) {
-                    //     let highlightKey = 'highlight_' + prop.replace('.', '_');
-                    //     data[i][highlightKey] = currentDocs[i].highlighting[prop];
-                    //   }
-                    // }
-                    if(this.searchValue) {
-                      for(let prop in data[i]) {
-                        if(prop == "address") {
-                          for(let subProp in data[i][prop]) {
-                            this._formatHighlight(data[i][prop], subProp);
-                          }
-                        }else if(prop != "idx") {
-                          this._formatHighlight(data[i], prop);
-                        }
-                      }
-                    }
-                  }
-                  this._stateStatsChanged();
-                  callback(data);
-                });
+          // Update stats
+          if(this.stateStatsIds.indexOf(this.data[i].idx)<0) {
+            this.stateStatsIds.push(this.data[i].idx);
+            if(this.data[i].address.state) {
+              if(this.stateStats[this.data[i].address.state]) {
+                this.stateStats[this.data[i].address.state]++;
               }else {
-                this._stateStatsChanged();
-                callback(data);
+                this.stateStats[this.data[i].address.state] = 1;
+              }
+            }else {
+              if(this.stateStats["unknown"]) {
+                this.stateStats["unknown"]++;
+              }else {
+                this.stateStats["unknown"] = 1;
               }
             }
-          });
-        });
+          }
+
+          if(this.searchValue) {
+            for(let prop in this.data[i]) {
+              if(prop == "address") {
+                for(let subProp in this.data[i][prop]) {
+                  this._formatHighlight(this.data[i][prop], subProp);
+                }
+              }else if(prop != "idx") {
+                this._formatHighlight(this.data[i], prop);
+              }
+            }
+          }
+        }
+        this._stateStatsChanged();
       }
 
       _installDemo() {
         $.get('src/resources/data.json', data => {
-          this.localDB.bulkDocs(data.result).then(create => {
-            location.href = "./?rundemo";
-          }).catch(insertErr => {
-            document.write("Failed to create local demo:\n" + insertErr);
-          });
+          this.data = data.result;
+          this.size = data.size;
+          this._loadData();
         });
       }
 
@@ -357,6 +313,8 @@
       ready() {
         super.ready();
 
+        this._installDemo();
+
         // Check if demo reset is requested
         if(location.href.endsWith("?resetdemo")) {
           this._resetDemo();
@@ -371,21 +329,6 @@
         if(location.href.endsWith("?rundemo")) {
           this.demoMode = true;
         }
-
-        // For first visit, we must replicate first
-        this.localDB.info().then(localdbinfo => {
-          if(localdbinfo.doc_count === 0) {
-            // TODO: Handle other errors
-            // TODO: Do this in the background and display already loaded data
-            PouchDB.replicate(this.remoteDB, this.localDB).on('complete', info => {
-              this._loadData();
-            }).on('error', err => {
-              this.$.demoWarn.open();
-            });
-          }else {
-            this._loadData();
-          }
-        });
       }
 
       update(newPerson) {
@@ -511,7 +454,7 @@
               this.searchResults[i].id = this.searchResults[i]._id;
               delete this.searchResults[i]._id;
             }
-            this.$.lazyGrid.clearCache();
+            this.$.staticGrid.clearCache();
           }).catch(function (err) {
             // TODO: Handle error
           });
@@ -519,7 +462,7 @@
           // Clear search
           this.searchResults = undefined;
           this.size = this.allDocs.length;
-          this.$.lazyGrid.clearCache();
+          this.$.staticGrid.clearCache();
         }
       }
 
