@@ -11,8 +11,6 @@
 <link rel="import" href="../../bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="../../bower_components/vaadin-button/vaadin-button.html">
 
-<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
-
 <dom-module id="person-grid">
   <template>
     <style>
@@ -135,16 +133,6 @@
         <iron-icon icon="vaadin:plus"></iron-icon>
       </vaadin-button>
     </div>
-
-    <paper-toast
-      id="demoWarn" 
-      class="fit-bottom"
-      text="Unable to find remote nor locale database, install demo mode?"
-      duration="0">
-      <vaadin-button on-tap="_installDemo" theme="tertiary" style="color:red;">
-        Run Demo
-      </vaadin-button>
-    </paper-toast>
   </template>
 
   <script>
