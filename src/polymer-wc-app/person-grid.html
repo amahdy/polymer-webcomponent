@@ -211,7 +211,7 @@
 
         // Search will perform the refresh, no need to duplicate
         if(this.searchValue) {
-          this.search(this.searchValue, selectedPerson);
+          this.search(this.searchValue);
         }else {
           this._loadData();
         }
@@ -326,11 +326,8 @@
         this._refreshGrid(null);
       }
 
-      search(value, selection=null) {
+      search(value) {
         this.searchValue = value;
-
-        // Make sure to unselect any selected item
-        this._setSelectedItem(selection);
 
         this.searchResults = [];
         if(value) {
