@@ -65,7 +65,7 @@
       items="[[data]]"
       active-item="{{activeItem}}"
       selected-items="{{selectedItems}}"
-      item-id-path="_id"
+      item-id-path="idx"
       size="[[size]]"
       hidden$="[[!size]]">
 
@@ -93,10 +93,10 @@
         <template class="header">Phone</template>
         <template>
           <span class="grid-cell">
-            <template is="dom-if" if="[[item.address.highlight_phone]]">
-              <span inner-H-T-M-L="[[_formatPhone(item.address.highlight_phone)]]"></span>
+            <template is="dom-if" if="[[item.highlight_phone]]">
+              <span inner-H-T-M-L="[[_formatPhone(item.highlight_phone)]]"></span>
             </template>
-            <template is="dom-if" if="[[!item.address.highlight_phone]]">
+            <template is="dom-if" if="[[!item.highlight_phone]]">
               [[_formatPhone(item.address.phone)]]
             </template>
           </span>
@@ -107,19 +107,19 @@
         <template class="header">Address</template>
         <template>
           <span class="grid-cell">
-            <template is="dom-if" if="[[item.address.highlight_street]]">
-              <span inner-H-T-M-L="[[item.address.highlight_street]]"></span>
+            <template is="dom-if" if="[[item.highlight_street]]">
+              <span inner-H-T-M-L="[[item.highlight_street]]"></span>
             </template>
-            <template is="dom-if" if="[[!item.address.highlight_street]]">
+            <template is="dom-if" if="[[!item.highlight_street]]">
               [[item.address.street]]
             </template>
             <template is="dom-if" if="[[item.address.city]]">
               ,
             </template>
-            <template is="dom-if" if="[[item.address.highlight_city]]">
-              <span inner-H-T-M-L="[[item.address.highlight_city]]"></span>
+            <template is="dom-if" if="[[item.highlight_city]]">
+              <span inner-H-T-M-L="[[item.highlight_city]]"></span>
             </template>
-            <template is="dom-if" if="[[!item.address.highlight_city]]">
+            <template is="dom-if" if="[[!item.highlight_city]]">
               [[item.address.city]]
             </template>
           </span>
@@ -173,16 +173,15 @@
 
           searchValue: String, // Last known search vlaue.
 
-          searchResults: Array, // Filter grid based on those results.
+          // Filter grid based on those results.
+          searchResults: {
+            type: Array,
+            value: [],
+          },
 
           stateStats: {
             type: Object,
             value: {}
-          },
-
-          stateStatsIds: {
-            type: Array,
-            value: []
           },
         }
       }
@@ -209,11 +208,12 @@
 
       _refreshGrid(selectedPerson) {
         this._setSelectedItem(selectedPerson);
+
         // Search will perform the refresh, no need to duplicate
         if(this.searchValue) {
           this.search(this.searchValue, selectedPerson);
         }else {
-          this.$.staticGrid.clearCache();
+          this._loadData();
         }
         if(selectedPerson) {
           this.$.staticGrid._scrollToIndex(this._getSelectedItem().idx);
@@ -221,53 +221,41 @@
       }
 
       _loadData() {
-
-        for(let i=0; i<this.size; i++) {
-          // TODO: avoid keeping track of indexes
-          // https://github.com/vaadin/vaadin-grid/issues/1154
-          this.data[i].idx = i;
-
+        let currentData = this.searchValue ? this.searchResults : this.data;
+        this.stateStats = {};
+        for(let i=0; i<currentData.length; i++) {
           // Update stats
-          if(this.stateStatsIds.indexOf(this.data[i].idx)<0) {
-            this.stateStatsIds.push(this.data[i].idx);
-            if(this.data[i].address.state) {
-              if(this.stateStats[this.data[i].address.state]) {
-                this.stateStats[this.data[i].address.state]++;
-              }else {
-                this.stateStats[this.data[i].address.state] = 1;
-              }
+          if(currentData[i].address.state) {
+            if(this.stateStats[currentData[i].address.state]) {
+              this.stateStats[currentData[i].address.state]++;
             }else {
-              if(this.stateStats["unknown"]) {
-                this.stateStats["unknown"]++;
-              }else {
-                this.stateStats["unknown"] = 1;
-              }
+              this.stateStats[currentData[i].address.state] = 1;
             }
-          }
-
-          if(this.searchValue) {
-            for(let prop in this.data[i]) {
-              if(prop == "address") {
-                for(let subProp in this.data[i][prop]) {
-                  this._formatHighlight(this.data[i][prop], subProp);
-                }
-              }else if(prop != "idx") {
-                this._formatHighlight(this.data[i], prop);
-              }
+          }else {
+            if(this.stateStats["unknown"]) {
+              this.stateStats["unknown"]++;
+            }else {
+              this.stateStats["unknown"] = 1;
             }
           }
         }
+        this.$.staticGrid.items = currentData;
+        this.size = currentData.length;
         this._stateStatsChanged();
       }
 
       _installDemo() {
         this.$.staticStorage.getStoredValue("data").then(localdata => {
           this.data = localdata;
-          this.size = localdata.length;
+          this._loadData();
         }).catch(() => {
           $.get('src/resources/data.json', data => {
+            // Index is needed to facilitate data manipulation
+            for(let i=0; i<data.result.length; i++) {
+              data.result[i].idx = i;
+            }
+
             this.data = data.result;
-            this.size = data.size;
             this._loadData();
           });
         });
@@ -289,15 +277,19 @@
         }
       }
 
-      _formatHighlight(data, prop, highlightKey) {
+      _formatHighlight(item, prop, secondary=null) {
+        let data = secondary ? item[secondary][prop] : item[prop];
+        if(!data) return;
         let expression = RegExp(this.searchValue, 'i'); // TODO: use /g/ to highlight all
-        let match = data[prop].match(expression);
+        let match = data.match(expression);
         if(match) {
-          let highlight = data[prop].replace(
+          let highlight = data.replace(
             expression,
             '<span class="search-highlight">' + match[0] + '</span>'
           );
-          data['highlight_' + prop] = highlight;
+          let matchItem = {...item};
+          matchItem['highlight_' + prop] = highlight;
+          this.searchResults.push(matchItem);
         }
       }
 
@@ -307,81 +299,31 @@
         // Check if demo reset is requested
         if(location.href.endsWith("?resetdemo")) {
           this._resetDemo();
+        }else {
+          this._installDemo();
         }
-
-        this._installDemo();
       }
 
       update(newPerson) {
-        // Cleanup before storing
-        for(let prop in newPerson) {
-          if(prop=="address") {
-            for(let subProp in newPerson[prop]) {
-              if(subProp.startsWith('highlight_')) {
-                delete newPerson[prop][subProp];
-              }
-            }
-          }else if(prop.startsWith('highlight_')) {
-            delete newPerson[prop];
-          }
-        }
-        let idx = newPerson.idx;
-        delete newPerson.idx;
-
-        this.localDB.put(newPerson).then(response => {
-          // TODO: Bug? Grid does not update selectedItems after clearCache
-          // https://github.com/vaadin/vaadin-grid/issues/1153
-          newPerson._rev = response.rev;
-          newPerson.idx = idx;
-
-          this._refreshGrid(newPerson);
-        });
+        this.set('data.'+newPerson.idx, {...newPerson});
+        this._refreshGrid(newPerson);
       }
 
       create(newPerson) {
-        this.localDB.post(newPerson).then(response => {
-          // Insert in the begining
-          this.allDocs.unshift({
-            id: response.id
-          });
-          newPerson.idx = 0;
-          newPerson._id = response.id;
-          newPerson._rev = response.rev;
-
-          // Update stats
-          this.stateStatsIds.push(newPerson._id);
-          // TODO: Add possibility to chose state ..etc
-          if(this.stateStats["unknown"]) {
-            this.stateStats["unknown"]++;
-          }else {
-            this.stateStats["unknown"] = 1;
-          }
-
-          this._refreshGrid(newPerson);
-        });
+        newPerson.idx = this.data.length;
+        this.push('data', newPerson);
+        this._refreshGrid(newPerson);
       }
 
       delete(person) {
-        this.localDB.remove(person).then(response => {
-          // Empty local properties
-          this.allDocs.splice(this.allDocs.findIndex(e => e.id==response.id), 1);
-          this.stateStatsIds.splice(person._id, 1);
+        // Update indexes
+        for(let i=person.idx; i<this.data.length-1; i++) {
+          this.data[i]=this.data[i+1];
+          this.data[i].idx=i;
+        }
+        this.pop('data');
 
-          // Cleanup stats
-          if(person.address.state) {
-            this.stateStats[person.address.state]--;
-            if(this.stateStats[person.address.state]==0) {
-              delete this.stateStats[person.address.state];
-            }
-          }else {
-            this.stateStats["unknown"]--;
-            if(this.stateStats["unknown"]==0) {
-              delete this.stateStats["unknown"];
-            }
-          }
-
-          this._refreshGrid(null);
-        });
+        this._refreshGrid(null);
       }
 
       search(value, selection=null) {
@@ -390,61 +332,21 @@
         // Make sure to unselect any selected item
         this._setSelectedItem(selection);
 
-        // Reset chart
-        this.stateStatsIds = new Array();
-        this.stateStats = {};
-
+        this.searchResults = [];
         if(value) {
-          this.localDB.find({
-            selector: {
-              _id: {$gte: null},
-              $or:[
-                {'firstName': {$regex: RegExp(".*"+value+".*", "i")}},
-                {'lastName': {$regex: RegExp(".*"+value+".*", "i")}},
-                {'address.street': {$regex: RegExp(".*"+value+".*", "i")}},
-                {'address.city': {$regex: RegExp(".*"+value+".*", "i")}},
-                {'address.state': {$regex: RegExp(".*"+value+".*", "i")}},
-                {'address.phone': {$regex: RegExp(".*"+value+".*", "i")}},
-                // TODO: should add more columns? not shown in grid though
-              ]
-            },
-            fields: ['_id']
-          // });
-          // TODO: Fix custom search
-          // this.localDB.search({
-          //   query: value,
-          //   fields: [
-          //     'firstName',
-          //     'lastName',
-          //     'address.street',
-          //     'address.city',
-          //     'address.state',
-          //     'address.zip',
-          //     'address.country',
-          //     'address.phone',
-          //     'address.email'
-          //   ],
-          //   highlighting: true,
-          //   highlighting_pre: '<span class="search-highlight">',
-          //   highlighting_post: '</span>'
-          }).then(response => {
-            // this.searchResults = response.rows;
-            this.searchResults = response.docs;
-            // Seriously? You don't need this in quick-search
-            for(let i in this.searchResults) {
-              this.searchResults[i].id = this.searchResults[i]._id;
-              delete this.searchResults[i]._id;
-            }
-            this.$.staticGrid.clearCache();
-          }).catch(function (err) {
-            // TODO: Handle error
+          let regex = RegExp(value, 'i'); // TODO: use /g/ to highlight all
+          this.data.forEach(item => {
+            // TODO: should add more columns? not shown in grid though
+            // TODO: search first and last name together?
+            this._formatHighlight(item, 'firstName');
+            this._formatHighlight(item, 'lastName');
+            this._formatHighlight(item, 'street', 'address');
+            this._formatHighlight(item, 'city', 'address');
+            this._formatHighlight(item, 'state', 'address');
+            this._formatHighlight(item, 'phone', 'address');
           });
-        }else {
-          // Clear search
-          this.searchResults = undefined;
-          this.size = this.allDocs.length;
-          this.$.staticGrid.clearCache();
         }
+        this._loadData();
       }
 
       add() {
