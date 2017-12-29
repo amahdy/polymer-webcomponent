@@ -280,16 +280,16 @@
       _formatHighlight(item, prop, secondary=null) {
         let data = secondary ? item[secondary][prop] : item[prop];
         if(!data) return;
-        let expression = RegExp(this.searchValue, 'i'); // TODO: use /g/ to highlight all
-        let match = data.match(expression);
-        if(match) {
-          let highlight = data.replace(
+
+        let expression = RegExp('('+this.searchValue+')', 'ig');
+        if(data.match(expression)) {
+          item['highlight_' + prop] = data.replace(
             expression,
-            '<span class="search-highlight">' + match[0] + '</span>'
+            '<span class="search-highlight">$1</span>'
           );
-          let matchItem = {...item};
-          matchItem['highlight_' + prop] = highlight;
-          this.searchResults.push(matchItem);
+          return true;
+        }else {
+          return false;
         }
       }
 
@@ -335,12 +335,15 @@
           this.data.forEach(item => {
             // TODO: should add more columns? not shown in grid though
             // TODO: search first and last name together?
-            this._formatHighlight(item, 'firstName');
-            this._formatHighlight(item, 'lastName');
-            this._formatHighlight(item, 'street', 'address');
-            this._formatHighlight(item, 'city', 'address');
-            this._formatHighlight(item, 'state', 'address');
-            this._formatHighlight(item, 'phone', 'address');
+            let matchItem = {...item};
+            if(this._formatHighlight(matchItem, 'firstName')
+              || this._formatHighlight(matchItem, 'lastName')
+              || this._formatHighlight(matchItem, 'street', 'address')
+              || this._formatHighlight(matchItem, 'city', 'address')
+              || this._formatHighlight(matchItem, 'state', 'address')
+              || this._formatHighlight(matchItem, 'phone', 'address')) {
+                this.searchResults.push(matchItem);
+            }
           });
         }
         this._loadData();
