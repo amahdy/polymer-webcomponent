@@ -60,10 +60,8 @@
         <template class="header">Name</template>
         <template>
           <span class="grid-cell">
-            <span hidden$="[[!item.highlight_firstName]]" inner-H-T-M-L="[[item.highlight_firstName]]"></span>
-            <span hidden$="[[item.highlight_firstName]]">[[item.firstName]]</span>
-            <span hidden$="[[!item.highlight_lastName]]" inner-H-T-M-L="[[item.highlight_lastName]]"></span>
-            <span hidden$="[[item.highlight_lastName]]">[[item.lastName]]</span>
+            <span inner-H-T-M-L="[[_formatHighlight(item, 'firstName')]]"></span>
+            <span inner-H-T-M-L="[[_formatHighlight(item, 'lastName')]]"></span>
           </span>
         </template>
       </vaadin-grid-column>
@@ -72,8 +70,7 @@
         <template class="header">Phone</template>
         <template>
           <span class="grid-cell">
-            <span hidden$="[[!item.highlight_phone]]" inner-H-T-M-L="[[_formatPhone(item.highlight_phone)]]"></span>
-            <span hidden$="[[item.highlight_phone]]">[[_formatPhone(item.address.phone)]]</span>
+            <span inner-H-T-M-L="[[_formatPhone(item)]]"></span>
           </span>
         </template>
       </vaadin-grid-column>
@@ -82,11 +79,9 @@
         <template class="header">Address</template>
         <template>
           <span class="grid-cell">
-            <span hidden$="[[!item.highlight_street]]" inner-H-T-M-L="[[item.highlight_street]]"></span>
-            <span hidden$="[[item.highlight_street]]">[[item.address.street]]</span>
+            <span inner-H-T-M-L="[[_formatHighlight(item, 'street', 'address')]]"></span>
             <span hidden$="[[!item.address.city]]">,</span>
-            <span hidden$="[[!item.highlight_city]]" inner-H-T-M-L="[[item.highlight_city]]"></span>
-            <span hidden$="[[item.highlight_city]]">[[item.address.city]]</span>
+            <span inner-H-T-M-L="[[_formatHighlight(item, 'city', 'address')]]"></span>
           </span>
         </template>
       </vaadin-grid-column>
@@ -140,10 +135,21 @@
         this.dispatchEvent(new CustomEvent('on-select', {detail: this._getSelectedItem()}));
       }
 
-      _formatPhone(phoneNumber) {
-        if(phoneNumber) {
+      _formatHighlight(item, prop, secondary=null) {
+        if(item['highlight_' + prop]) {
+          return item['highlight_' + prop];
+        }else {
+          return (secondary ? item[secondary][prop] : item[prop]) || "";
+        }
+      }
+
+      _formatPhone(item) {
+        if(item.address.phone) {
           // TODO: does not format if highlighted in search
-          return phoneNumber.replace(/(\d{3})(\d{3})(.*)/, "($1) $2-$3");
+          return this._formatHighlight(item, 'phone', 'address').replace(
+            /(\d{3})(\d{3})(.*)/, "($1) $2-$3");
+        }else {
+          return "";
         }
       }
 
