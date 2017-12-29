@@ -7,6 +7,7 @@
 
 <link rel="import" href="../../bower_components/vaadin-split-layout/vaadin-split-layout.html">
 
+<link rel="import" href="./person-data.html">
 <link rel="import" href="./person-grid.html">
 <link rel="import" href="./person-editor.html">
 <link rel="import" href="./person-search.html">
@@ -63,6 +64,7 @@
       }
     </style>
 
+    <person-data id="data"></person-data>
     <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
 
     <vaadin-split-layout orientation$="{{orientation}}" id="topLayout" theme="subtle">
@@ -97,34 +99,47 @@
       ready() {
         super.ready();
 
+        // Check if demo reset is requested
+        if(location.href.endsWith("?resetdemo")) {
+          this.$.data.resetDemo();
+          location.href = "./";
+          return;
+        }
+        this.$.data.installDemo();
+
+        this.$.data.addEventListener('on-data', evt => {
+          this.$.personGrid.setItems(evt.detail);
+        });
+
         this.$.personGrid.addEventListener('on-select', evt => {
           this.$.editor.setPerson(evt.detail);
+          this.$.data.setSelection(evt.detail);
         });
 
         this.$.personGrid.addEventListener('on-add', evt => {
           this.$.editor.setFocus();
         });
 
-        this.$.personGrid.addEventListener('on-stats', evt => {
+        this.$.data.addEventListener('on-stats', evt => {
           if(this.wide) {
             this.$.chart.updateStats(evt.detail);
           }
         });
 
         this.$.editor.addEventListener('on-update', evt => {
-          this.$.personGrid.update(evt.detail);
+          this.$.data.update(evt.detail);
         });
 
         this.$.editor.addEventListener('on-create', evt => {
-          this.$.personGrid.create(evt.detail);
+          this.$.data.create(evt.detail);
         });
 
         this.$.editor.addEventListener('on-delete', evt => {
-          this.$.personGrid.delete(evt.detail);
+          this.$.data.delete(evt.detail);
         });
 
         this.$.search.addEventListener('on-find', evt => {
-          this.$.personGrid.search(evt.detail);
+          this.$.data.search(evt.detail);
         });
       }
     }

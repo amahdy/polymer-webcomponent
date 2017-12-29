@@ -2,11 +2,8 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
 
-<link rel="import" href="../../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
-
 <link rel="import" href="../../bower_components/vaadin-valo-theme/vaadin-grid.html">
 <link rel="import" href="../../bower_components/vaadin-valo-theme/vaadin-button.html">
-<link rel="import" href="../../bower_components/vaadin-icons/vaadin-icons.html">
 
 <link rel="import" href="../../bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="../../bower_components/vaadin-button/vaadin-button.html">
@@ -48,27 +45,17 @@
       }
     </style>
 
-    <app-localstorage-document id="staticStorage" key="data" data="{{data}}"></app-localstorage-document>
-    <iron-ajax
-      id="demoData"
-      url="./src/resources/data.json"
-      handle-as="json">
-    </iron-ajax>
     <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
 
-    <template is="dom-if" if="[[!size]]">
-      <center class="data-area"><strong>No Contacts Found</strong></center>
-    </template>
+    <center hidden$="[[!isEmpty]]" class="data-area"><strong>No Contacts Found</strong></center>
     <vaadin-grid
       id="staticGrid"
       class="data-area"
       aria-label="Person Grid"
-      items="[[data]]"
       active-item="{{activeItem}}"
       selected-items="{{selectedItems}}"
       item-id-path="idx"
-      size="[[size]]"
-      hidden$="[[!size]]">
+      hidden$="[[isEmpty]]">
 
       <vaadin-grid-column class="main-col" wide-layout$="{{wide}}">
         <template class="header">Name</template>
@@ -141,9 +128,9 @@
 
       static get properties() {
         return {
-          data: {
-            type: Array,
-            value: [],
+          isEmpty: {
+            type: Boolean,
+            value: true,
           },
 
           activeItem: {
@@ -152,27 +139,6 @@
 
           selectedItems: {
             observer: '_selectedItemsChanged',
-          },
-
-          allDocs: Array, // All docs in the grid.
-
-          // Size of total rows in the grid.
-          size: {
-            type: Number,
-            value: 0
-          },
-
-          searchValue: String, // Last known search vlaue.
-
-          // Filter grid based on those results.
-          searchResults: {
-            type: Array,
-            value: [],
-          },
-
-          stateStats: {
-            type: Object,
-            value: {}
           },
         }
       }
@@ -197,72 +163,6 @@
         this.dispatchEvent(new CustomEvent('on-select', {detail: this._getSelectedItem()}));
       }
 
-      _refreshGrid(selectedPerson) {
-        this._setSelectedItem(selectedPerson);
-
-        // Search will perform the refresh, no need to duplicate
-        if(this.searchValue) {
-          this.search(this.searchValue);
-        }else {
-          this._loadData();
-        }
-        if(selectedPerson) {
-          this.$.staticGrid._scrollToIndex(this._getSelectedItem().idx);
-        }
-      }
-
-      _loadData() {
-        let currentData = this.searchValue ? this.searchResults : this.data;
-        this.stateStats = {};
-        for(let i=0; i<currentData.length; i++) {
-          // Update stats
-          if(currentData[i].address.state) {
-            if(this.stateStats[currentData[i].address.state]) {
-              this.stateStats[currentData[i].address.state]++;
-            }else {
-              this.stateStats[currentData[i].address.state] = 1;
-            }
-          }else {
-            if(this.stateStats["unknown"]) {
-              this.stateStats["unknown"]++;
-            }else {
-              this.stateStats["unknown"] = 1;
-            }
-          }
-        }
-        this.$.staticGrid.items = currentData;
-        this.size = currentData.length;
-        this._stateStatsChanged();
-      }
-
-      _installDemo() {
-        this.$.staticStorage.getStoredValue("data").then(localdata => {
-          this.data = localdata;
-          this._loadData();
-        }).catch(() => {
-          this.$.demoData.generateRequest().completes.then(response => {
-            let data = response.response.result;
-
-            // Index is needed to facilitate data manipulation
-            for(let i=0; i<data.length; i++) {
-              data[i].idx = i;
-            }
-
-            this.data = data;
-            this._loadData();
-          });
-        });
-      }
-
-      _resetDemo() {
-        this.$.staticStorage.destroy();
-        location.href = "./";
-      }
-
-      _stateStatsChanged() {
-        this.dispatchEvent(new CustomEvent('on-stats', {detail: this.stateStats}));
-      }
-
       _formatPhone(phoneNumber) {
         if(phoneNumber) {
           // TODO: does not format if highlighted in search
@@ -270,81 +170,27 @@
         }
       }
 
-      _formatHighlight(item, prop, secondary=null) {
-        let data = secondary ? item[secondary][prop] : item[prop];
-        if(!data) return;
+      setSelection(item) {
+        this.activeItem = item;
 
-        let expression = RegExp('('+this.searchValue+')', 'ig');
-        if(data.match(expression)) {
-          item['highlight_' + prop] = data.replace(
-            expression,
-            '<span class="search-highlight">$1</span>'
-          );
-          return true;
-        }else {
-          return false;
+        // Only scroll if selection is done programatically
+        // In search mode we can't always scroll
+        if(item && item.idx<this.$.staticGrid.size) {
+          this.$.staticGrid._scrollToIndex(item.idx);
         }
       }
 
-      ready() {
-        super.ready();
-
-        // Check if demo reset is requested
-        if(location.href.endsWith("?resetdemo")) {
-          this._resetDemo();
-        }else {
-          this._installDemo();
-        }
-      }
-
-      update(newPerson) {
-        this.set('data.'+newPerson.idx, {...newPerson});
-        this._refreshGrid(newPerson);
-      }
-
-      create(newPerson) {
-        newPerson.idx = this.data.length;
-        this.push('data', newPerson);
-        this._refreshGrid(newPerson);
-      }
-
-      delete(person) {
-        // Update indexes
-        for(let i=person.idx; i<this.data.length-1; i++) {
-          this.data[i]=this.data[i+1];
-          this.data[i].idx=i;
-        }
-        this.pop('data');
-
-        this._refreshGrid(null);
-      }
-
-      search(value) {
-        this.searchValue = value;
-
-        this.searchResults = [];
-        if(value) {
-          let regex = RegExp(value, 'i'); // TODO: use /g/ to highlight all
-          this.data.forEach(item => {
-            // TODO: should add more columns? not shown in grid though
-            // TODO: search first and last name together?
-            let matchItem = {...item};
-            if(this._formatHighlight(matchItem, 'firstName')
-              || this._formatHighlight(matchItem, 'lastName')
-              || this._formatHighlight(matchItem, 'street', 'address')
-              || this._formatHighlight(matchItem, 'city', 'address')
-              || this._formatHighlight(matchItem, 'state', 'address')
-              || this._formatHighlight(matchItem, 'phone', 'address')) {
-                this.searchResults.push(matchItem);
-            }
-          });
-        }
-        this._loadData();
+      setItems(items) {
+        this.isEmpty=(items.data.length<=0);
+        this.$.staticGrid.items = items.data;
+        this.$.staticGrid.size = items.data.length;
+        this.$.staticGrid.clearCache();
+        this.setSelection(items.selectedItem);
       }
 
       add() {
         // Clear selection first
-        this._setSelectedItem(null);
+        this.setSelection(null);
 
         this.dispatchEvent(new CustomEvent('on-add'));
       }
