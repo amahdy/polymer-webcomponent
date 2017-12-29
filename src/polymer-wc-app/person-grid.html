@@ -60,8 +60,8 @@
         <template class="header">Name</template>
         <template>
           <span class="grid-cell">
-            <span inner-H-T-M-L="[[_formatHighlight(item, 'firstName')]]"></span>
-            <span inner-H-T-M-L="[[_formatHighlight(item, 'lastName')]]"></span>
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'firstName')]]"></span>
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'lastName')]]"></span>
           </span>
         </template>
       </vaadin-grid-column>
@@ -70,7 +70,7 @@
         <template class="header">Phone</template>
         <template>
           <span class="grid-cell">
-            <span inner-H-T-M-L="[[_formatPhone(item)]]"></span>
+            <span inner-h-t-m-l="[[_formatPhone(item)]]"></span>
           </span>
         </template>
       </vaadin-grid-column>
@@ -79,9 +79,9 @@
         <template class="header">Address</template>
         <template>
           <span class="grid-cell">
-            <span inner-H-T-M-L="[[_formatHighlight(item, 'street', 'address')]]"></span>
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'street', 'address')]]"></span>
             <span hidden$="[[!item.address.city]]">,</span>
-            <span inner-H-T-M-L="[[_formatHighlight(item, 'city', 'address')]]"></span>
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'city', 'address')]]"></span>
           </span>
         </template>
       </vaadin-grid-column>
