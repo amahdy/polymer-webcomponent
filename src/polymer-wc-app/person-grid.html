@@ -1,6 +1,4 @@
 
-<script src="../../bower_components/jquery/dist/jquery.min.js"></script>
-
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
 
@@ -53,6 +51,11 @@
     </style>
 
     <app-localstorage-document id="staticStorage" key="data" data="{{data}}"></app-localstorage-document>
+    <iron-ajax
+      id="demoData"
+      url="./src/resources/data.json"
+      handle-as="json">
+    </iron-ajax>
     <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
 
     <template is="dom-if" if="[[!size]]">
@@ -249,13 +252,15 @@
           this.data = localdata;
           this._loadData();
         }).catch(() => {
-          $.get('src/resources/data.json', data => {
+          this.$.demoData.generateRequest().completes.then(response => {
+            let data = response.response.result;
+
             // Index is needed to facilitate data manipulation
-            for(let i=0; i<data.result.length; i++) {
-              data.result[i].idx = i;
+            for(let i=0; i<data.length; i++) {
+              data[i].idx = i;
             }
 
-            this.data = data.result;
+            this.data = data;
             this._loadData();
           });
         });
