@@ -158,7 +158,7 @@
             done();
           });
           element.setPerson(testPerson);
-          delBtn.dispatchEvent(new CustomEvent('tap'));
+          delBtn.dispatchEvent(new CustomEvent('click'));
         });
 
         test('firing event with person value when update button clicked', done => {
@@ -168,7 +168,7 @@
           });
           element.setPerson(testPerson);
           element._fillForm(modifiedPerson);
-          updateBtn.dispatchEvent(new CustomEvent('tap'));
+          updateBtn.dispatchEvent(new CustomEvent('click'));
         });
 
         test('firing event with person value when create button clicked', done => {
@@ -177,11 +177,11 @@
             done();
           });
           element._fillForm(testPerson);
-          updateBtn.dispatchEvent(new CustomEvent('tap'));
+          updateBtn.dispatchEvent(new CustomEvent('click'));
         });
 
         test('validating empty first name and falling back with error on UI', done => {
-          updateBtn.addEventListener('tap', event => {
+          updateBtn.addEventListener('click', event => {
             assert.isTrue(firstNameField.hasAttribute('invalid'))
             done();
           });
@@ -194,11 +194,11 @@
           let wrongPerson = {...testPerson};
           wrongPerson.firstName = "";
           element.setPerson(wrongPerson);
-          updateBtn.dispatchEvent(new CustomEvent('tap'));
+          updateBtn.dispatchEvent(new CustomEvent('click'));
         });
 
         test('validating too short first name and falling back with error on UI', done => {
-          updateBtn.addEventListener('tap', event => {
+          updateBtn.addEventListener('click', event => {
             // Validation not triggered automatically?
             // https://github.com/vaadin/vaadin-text-field/issues/182
             // assert.isTrue(firstNameField.hasAttribute('invalid'))
@@ -213,7 +213,7 @@
           let wrongPerson = {...testPerson};
           wrongPerson.firstName = "ab";
           element.setPerson(wrongPerson);
-          updateBtn.dispatchEvent(new CustomEvent('tap'));
+          updateBtn.dispatchEvent(new CustomEvent('click'));
         });
 
         test('pressing Enter performs update', done => {

@@ -30,7 +30,7 @@
       <vaadin-text-area placeholder="Address" id="address"></vaadin-text-area>
     </vaadin-form-layout>
 
-    <vaadin-button id="updateBtn" on-tap="update">
+    <vaadin-button id="updateBtn" on-click="update">
       <template is="dom-if" if="[[isUpdate]]">
         Update
       </template>
@@ -38,7 +38,7 @@
         Create
       </template>
     </vaadin-button>
-    <vaadin-button id="delBtn" hidden$="[[!isUpdate]]" theme="error" on-tap="delete">
+    <vaadin-button id="delBtn" hidden$="[[!isUpdate]]" theme="error" on-click="delete">
       Delete
     </vaadin-button>
 
