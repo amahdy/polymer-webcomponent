@@ -29,11 +29,11 @@
         });
 
         test('instantiating the element works', () => {
-          expect(elementShadowRoot.querySelector('vaadin-pie-chart')).to.exists;
+          assert.isDefined(elementShadowRoot.querySelector('vaadin-pie-chart'));
         });
 
         test('updating stats works', () => {
-          expect(element.data).to.be.empty;
+          assert.isUndefined(element.data);
 
           // Adding one element works
           let data = {"California":1};

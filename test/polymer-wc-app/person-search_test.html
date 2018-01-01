@@ -54,7 +54,7 @@
             done();
           });
           searchField.value = testWord;
-          searchBtn.dispatchEvent(new CustomEvent('click'));
+          searchBtn.click();
         });
 
         test('reseting using the reset button', done => {
@@ -63,7 +63,7 @@
             done();
           });
           searchField.value = testWord;
-          resetBtn.dispatchEvent(new CustomEvent('click'));
+          resetBtn.click();
         });
 
         test('toggling reset button', () => {
