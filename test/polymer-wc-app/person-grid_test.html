@@ -21,11 +21,166 @@
 
     <script>
       suite('person-grid', () => {
+        const items=[
+          {"firstName":"Jonathan","lastName":"Perez","address":{"street":"4817 Fallen Swale","city":"Louisiana","state":"District of Columbia","zip":"2008834","country":"USA","phone":"20255072"},"email":"jonathan.perez@company.com"},
+          {"firstName":"Madison","lastName":"Rodriguez","address":{"street":"7214 Hazy View Manor","city":"Twodot","state":"Alabama","zip":"3584767","country":"USA","phone":"20555967"},"email":"madison.rodriguez@company.com"},
+          {"firstName":"Mila","lastName":"Gonzalez","address":{"street":"92 Harvest Court","city":"Chickasawhatchee","state":"Vermont","zip":"0589796","country":"USA","phone":"80255041"},"email":"mila.gonzalez@company.com"},
+          {"firstName":"Madeline","lastName":"Perry","address":{"street":"7310 Indian Dale Trail","city":"Deephaven","state":"Indiana","zip":"4653602","country":"USA","phone":"57455369"},"email":"madeline.perry@company.com"}
+        ];
+        let spy, element, elementShadowRoot, staticGrid;
+
+        setup(() => {
+          element = fixture('Basic');
+          elementShadowRoot = element.shadowRoot;
+          staticGrid = elementShadowRoot.getElementById('staticGrid');
+          staticGrid.items = items;
+        });
+
         test('instantiating the element works', () => {
-          const element = fixture('Basic');
-          const elementShadowRoot = element.shadowRoot;
-          const elementTopLayout = elementShadowRoot.querySelector('vaadin-grid');
-          assert.equal(elementTopLayout.id, 'staticGrid');
+          assert.equal(elementShadowRoot.querySelector('vaadin-grid').id, 'staticGrid');
+        });
+
+        test('calling add fires event', done => {
+          element.addEventListener('on-add', event => {
+            assert.isNull(event.detail);
+            done();
+          });
+          element.add();
+        });
+
+        test('adding using the add button', () => {
+          spy = sinon.spy(element, 'add');
+          elementShadowRoot.getElementById('addBtn').click();
+          assert.isTrue(spy.called);
+        });
+
+        test('getting selected item works', () => {
+          staticGrid.selectedItems = [];
+          assert.isUndefined(element._getSelectedItem());
+
+          staticGrid.selectedItems = [items[0]];
+          assert.equal(element._getSelectedItem(), items[0]);
+
+          staticGrid.selectedItems = [items[1], items[2]];
+          assert.equal(element._getSelectedItem(), items[1]);
+        });
+
+        test('setting selected item works', () => {
+          element._setSelectedItem(null);
+          assert.equal(staticGrid.selectedItems, 0);
+
+          element._setSelectedItem(undefined);
+          assert.equal(staticGrid.selectedItems, 0);
+
+          element._setSelectedItem("");
+          assert.equal(staticGrid.selectedItems, 0);
+
+          element._setSelectedItem(items[3]);
+          assert.equal(element._getSelectedItem(), items[3]);
+        });
+
+        test('listening on item changed works', () => {
+          spy = sinon.spy(element, '_setSelectedItem');
+          element._activeItemChanged(items[0]);
+          assert.equal(element._setSelectedItem.getCall(0).args[0], items[0]);
+          assert.isTrue(spy.called);
+        });
+
+        test('changing selection fires event', done => {
+          element._setSelectedItem(items[0]);
+          element.addEventListener('on-select', event => {
+            assert.equal(event.detail, items[2]);
+            done();
+          });
+          element._setSelectedItem(items[2]);
+        });
+
+        test('detecting highlighted property works', () => {
+          let item = {...items[0]};
+          item["highlight_firstName"] = "highlighted firstName";
+          assert.equal(element._formatHighlight(item, "firstName"), "highlighted firstName");
+
+          item["highlight_state"] = "highlighted state";
+          assert.equal(element._formatHighlight(item, "state", true), "highlighted state");
+        });
+
+        // TODO test _formatPhone
+
+        test('setting selection works', () => {
+          spy = sinon.spy(staticGrid, '_scrollToIndex');
+
+          element.setSelection(null);
+          assert.isNull(staticGrid.activeItem);
+          assert.isFalse(spy.called);
+
+          element.setSelection(undefined);
+          assert.isUndefined(staticGrid.activeItem);
+          assert.isFalse(spy.called);
+
+          let item = {...items[0]};
+          item.idx=5;
+          element.setSelection(item);
+          assert.equal(staticGrid.activeItem, item);
+          assert.isFalse(spy.called);
+
+          item = {...items[1]};
+          item.idx=0;
+          element.setSelection(item);
+          assert.equal(staticGrid.activeItem, item);
+          assert.isTrue(spy.called);
+          assert.equal(staticGrid._scrollToIndex.getCall(0).args[0], 0);
+        });
+
+        test('setting items works', () => {
+          spy = sinon.spy(staticGrid, 'clearCache');
+
+          let data = {};
+          data.data = [];
+          element.setItems(data);
+          assert.isTrue(element.isEmpty);
+          assert.equal(staticGrid.items, 0);
+          assert.equal(staticGrid.size, 0);
+          assert.isUndefined(element._getSelectedItem());
+          assert.isTrue(spy.called);
+
+          data.data = items;
+          data.size = items.length;
+          data.selectedItem = items[3];
+          element.setItems(data);
+          assert.isFalse(element.isEmpty);
+          assert.equal(staticGrid.items, items);
+          assert.equal(staticGrid.size, items.length);
+          assert.equal(element._getSelectedItem(), items[3]);
+          assert.isTrue(spy.called);
+        });
+
+        test('adding works', done => {
+          spy = sinon.spy(element, 'setSelection');
+          element.addEventListener('on-add', event => {
+            assert.isNull(event.detail);
+            assert.isTrue(spy.called);
+            assert.isNull(element.setSelection.getCall(0).args[0]);
+            done();
+          });
+          element.add();
+        });
+
+        // TODO: test that columns are hidden on mobile and flex-grow works for first column
+
+        test('hidding grid works', () => {
+          let noGrid = elementShadowRoot.getElementById('noGrid');
+          let data = {};
+          data.data = [];
+
+          element.setItems(data);
+          assert.isTrue(staticGrid.hidden);
+          assert.isFalse(noGrid.hidden);
+
+          data.data = items;
+          data.size = items.length;
+          element.setItems(data);
+          assert.isFalse(staticGrid.hidden);
+          assert.isTrue(noGrid.hidden);
         });
       });
     </script>

@@ -46,7 +46,7 @@
 
     <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
 
-    <center hidden$="[[!isEmpty]]" class="data-area"><strong>No Contacts Found</strong></center>
+    <center id="noGrid" hidden$="[[!isEmpty]]" class="data-area"><strong>No Contacts Found</strong></center>
     <vaadin-grid
       id="staticGrid"
       class="data-area"
