@@ -156,7 +156,8 @@
           this.data.forEach(item => {
             // TODO: should add more columns? not shown in grid though
             // TODO: search first and last name together?
-            let matchItem = {...item};
+            let matchItem = {};
+            Object.assign(matchItem, item);
             if(this._formatHighlight(matchItem, 'firstName')
               || this._formatHighlight(matchItem, 'lastName')
               || this._formatHighlight(matchItem, 'street', 'address')

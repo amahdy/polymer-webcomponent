@@ -8,8 +8,6 @@ You can try the [online demo](https://amahdy.github.io/polymer-webcomponent/), a
 
 ![App Preview](./readme_files/preview.png)
 
-![App Preview in Mobile](./readme_files/preview_mobile.png)
-
 ## Step by step, building similar app
 
 Coming soon.
