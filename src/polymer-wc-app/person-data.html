@@ -1,0 +1,176 @@
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
+
+<dom-module id="person-data">
+  <template>
+    <app-localstorage-document id="staticStorage" key="data" data="{{data}}"></app-localstorage-document>
+    <iron-ajax
+      id="demoData"
+      url="./src/resources/data.json"
+      handle-as="json">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class PersonData extends Polymer.Element {
+      static get is() { return 'person-data'; }
+
+      static get properties() {
+        return {
+          data: {
+            type: Array,
+            value: [],
+          },
+
+          selectedItem: {
+            type: Object,
+            value: null,
+          },
+
+          searchValue: String, // Last known search vlaue.
+
+          // Subset of `data`.
+          searchResults: {
+            type: Array,
+            value: [],
+          },
+        }
+      }
+
+      _formatHighlight(item, prop, secondary=null) {
+        let data = secondary ? item[secondary][prop] : item[prop];
+        if(!data) return false;
+
+        let expression = RegExp('('+this.searchValue+')', 'ig');
+        if(data.match(expression)) {
+          item['highlight_' + prop] = data.replace(
+            expression,
+            '<span class="search-highlight">$1</span>'
+          );
+          return true;
+        }else {
+          return false;
+        }
+      }
+
+      _refresh(selectedItem) {
+        this.setSelection(selectedItem);
+
+        // Search will perform the `_loadData`, no need to duplicate
+        if(this.searchValue) {
+          this.search(this.searchValue);
+        }else {
+          this._loadData();
+        }
+      }
+
+      _loadData() {
+        let currentData = this.searchValue ? this.searchResults : this.data;
+        this.dispatchEvent(new CustomEvent('on-data', {
+          detail: {data:currentData, selectedItem:this.selectedItem}}));
+
+        // Update stats
+        let stateStats = {};
+        for(let i=0; i<currentData.length; i++) {
+          if(currentData[i].address.state) {
+            if(stateStats[currentData[i].address.state]) {
+              stateStats[currentData[i].address.state]++;
+            }else {
+              stateStats[currentData[i].address.state] = 1;
+            }
+          }else {
+            if(stateStats["unknown"]) {
+              stateStats["unknown"]++;
+            }else {
+              stateStats["unknown"] = 1;
+            }
+          }
+        }
+        this.dispatchEvent(new CustomEvent('on-stats', {detail: stateStats}));
+      }
+
+      installDemo() {
+        this.$.staticStorage.getStoredValue("data").then(localdata => {
+          if(localdata) {
+            this._loadData();
+          }else {
+            this.$.demoData.generateRequest().completes.then(response => {
+              let data = response.response.result;
+
+              // Index is needed to facilitate data manipulation
+              for(let i=0; i<data.length; i++) {
+                data[i].idx = i;
+              }
+
+              this.data = data;
+              this._loadData();
+            });
+          }
+        });
+      }
+
+      resetDemo() {
+        this.$.staticStorage.destroy();
+      }
+
+      setSelection(selectedItem) {
+        this.selectedItem = selectedItem;
+      }
+
+      update(newPerson) {
+        // Cleanup before storing
+        for(let prop in newPerson) {
+          if(prop.startsWith('highlight_')) {
+            delete newPerson[prop];
+          }
+        }
+
+        this.set('data.'+newPerson.idx, newPerson);
+        this._refresh(newPerson);
+      }
+
+      create(newPerson) {
+        newPerson.idx = this.data.length;
+        this.push('data', newPerson);
+        this._refresh(newPerson);
+      }
+
+      delete(person) {
+        // Update indexes
+        for(let i=person.idx; i<this.data.length-1; i++) {
+          this.data[i]=this.data[i+1];
+          this.data[i].idx=i;
+        }
+        this.pop('data');
+
+        this._refresh(null);
+      }
+
+      search(value) {
+        this.searchValue = value;
+
+        this.searchResults = [];
+        if(value) {
+          this.data.forEach(item => {
+            // TODO: should add more columns? not shown in grid though
+            // TODO: search first and last name together?
+            let matchItem = {};
+            Object.assign(matchItem, item);
+            if(this._formatHighlight(matchItem, 'firstName')
+              || this._formatHighlight(matchItem, 'lastName')
+              || this._formatHighlight(matchItem, 'street', 'address')
+              || this._formatHighlight(matchItem, 'city', 'address')
+              || this._formatHighlight(matchItem, 'state', 'address')
+              || this._formatHighlight(matchItem, 'phone', 'address')) {
+                this.searchResults.push(matchItem);
+            }
+          });
+        }
+        this._loadData();
+      }
+    }
+    customElements.define(PersonData.is, PersonData);
+  </script>
+</dom-module>

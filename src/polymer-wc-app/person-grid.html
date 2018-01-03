@@ -1,0 +1,183 @@
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/vaadin-valo-theme/vaadin-grid.html">
+<link rel="import" href="../../bower_components/vaadin-valo-theme/vaadin-button.html">
+
+<link rel="import" href="../../bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="../../bower_components/vaadin-button/vaadin-button.html">
+
+<dom-module id="person-grid">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      .data-area {
+        height: 100%;
+        width: 100%;
+      }
+
+      .grid-cell {
+        display: inline;
+      }
+
+      .search-highlight {
+        background-color: yellow;
+      }
+
+      .add-button {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        border-radius: 50%;
+      }
+
+      .main-col {
+        flex-grow: 1;
+      }
+
+      .main-col[wide-layout] {
+        width: 250px;
+        flex-grow: 0;
+      }
+    </style>
+
+    <iron-media-query query="(min-width: 600px)" query-matches="{{wide}}"></iron-media-query>
+
+    <center id="noGrid" hidden$="[[!isEmpty]]" class="data-area"><strong>No Contacts Found</strong></center>
+    <vaadin-grid
+      id="staticGrid"
+      class="data-area"
+      aria-label="Person Grid"
+      active-item="{{activeItem}}"
+      selected-items="{{selectedItems}}"
+      item-id-path="idx"
+      hidden$="[[isEmpty]]">
+
+      <vaadin-grid-column class="main-col" wide-layout$="{{wide}}">
+        <template class="header">Name</template>
+        <template>
+          <span class="grid-cell">
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'firstName')]]"></span>
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'lastName')]]"></span>
+          </span>
+        </template>
+      </vaadin-grid-column>
+
+      <vaadin-grid-column width="170px" flex-grow="0" hidden$="{{!wide}}">
+        <template class="header">Phone</template>
+        <template>
+          <span class="grid-cell">
+            <span inner-h-t-m-l="[[_formatPhone(item)]]"></span>
+          </span>
+        </template>
+      </vaadin-grid-column>
+
+      <vaadin-grid-column flex-grow="1" hidden$="{{!wide}}">
+        <template class="header">Address</template>
+        <template>
+          <span class="grid-cell">
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'street', 'address')]]"></span>
+            <span hidden$="[[!item.address.city]]">,</span>
+            <span inner-h-t-m-l="[[_formatHighlight(item, 'city', 'address')]]"></span>
+          </span>
+        </template>
+      </vaadin-grid-column>
+    </vaadin-grid>
+
+    <div style="position:relative">
+      <vaadin-button id="addBtn" class="add-button" on-click="add" theme="icon primary">
+        <iron-icon icon="valo:plus"></iron-icon>
+      </vaadin-button>
+    </div>
+  </template>
+
+  <script>
+    class PersonGrid extends Polymer.Element {
+      static get is() { return 'person-grid'; }
+
+      static get properties() {
+        return {
+          isEmpty: {
+            type: Boolean,
+            value: true,
+          },
+
+          activeItem: {
+            observer: '_activeItemChanged',
+          },
+
+          selectedItems: {
+            observer: '_selectedItemsChanged',
+          },
+        }
+      }
+
+      _getSelectedItem() {
+        return this.selectedItems[0];
+      }
+
+      _setSelectedItem(selectedItem) {
+        if(selectedItem) {
+          this.selectedItems = [selectedItem];
+        }else {
+          this.selectedItems = [];
+        }
+      }
+
+      _activeItemChanged(activeItem) {
+        this._setSelectedItem(activeItem);
+      }
+
+      _selectedItemsChanged() {
+        this.dispatchEvent(new CustomEvent('on-select', {detail: this._getSelectedItem()}));
+      }
+
+      _formatHighlight(item, prop, secondary=null) {
+        if(item['highlight_' + prop]) {
+          return item['highlight_' + prop];
+        }else {
+          return (secondary ? item[secondary][prop] : item[prop]) || "";
+        }
+      }
+
+      _formatPhone(item) {
+        if(item.address.phone) {
+          // TODO: does not format if highlighted in search
+          return this._formatHighlight(item, 'phone', 'address').replace(
+            /(\d{3})(\d{3})(.*)/, "($1) $2-$3");
+        }else {
+          return "";
+        }
+      }
+
+      setSelection(item) {
+        this.activeItem = item;
+
+        // Only scroll if selection is done programatically
+        // In search mode we can't always scroll
+        if(item && item.idx<this.$.staticGrid.size) {
+          this.$.staticGrid._scrollToIndex(item.idx);
+        }
+      }
+
+      setItems(items) {
+        this.isEmpty=(items.data.length<=0);
+        this.$.staticGrid.items = items.data;
+        this.$.staticGrid.size = items.data.length;
+        this.$.staticGrid.clearCache();
+        this.setSelection(items.selectedItem);
+      }
+
+      add() {
+        // Clear selection first
+        this.setSelection(null);
+
+        this.dispatchEvent(new CustomEvent('on-add'));
+      }
+    }
+    customElements.define(PersonGrid.is, PersonGrid);
+  </script>
+</dom-module>

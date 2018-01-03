@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>polymer-wc-app test</title>
+
+    <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../../src/polymer-wc-app/polymer-wc-app.html">
+  </head>
+  <body>
+
+    <dom-module id="fake-person-data">
+      <template></template>
+      <script>
+        class FakePersonData extends Polymer.Element {
+          static get is() { return 'fake-person-data'; }
+          fireData() {
+            this.dispatchEvent(new CustomEvent('on-data', {detail: "fake-person-data-data"}));
+          }
+          fireStats() {
+            this.dispatchEvent(new CustomEvent('on-stats', {detail: "fake-person-data-stats"}));
+          }
+          installDemo() {}
+          resetDemo() {}
+          setSelection() {}
+          update() {}
+          create() {}
+          delete() {}
+          search() {}
+        }
+        customElements.define(FakePersonData.is, FakePersonData);
+      </script>
+    </dom-module>
+    <dom-module id="fake-person-search">
+      <template></template>
+      <script>
+        class FakePersonSearch extends Polymer.Element {
+          static get is() { return 'fake-person-search'; }
+          fireFind() {
+            this.dispatchEvent(new CustomEvent('on-find', {detail: "fake-person-search-find"}));
+          }
+        }
+        customElements.define(FakePersonSearch.is, FakePersonSearch);
+      </script>
+    </dom-module>
+    <dom-module id="fake-person-grid">
+      <template></template>
+      <script>
+        class FakePersonGrid extends Polymer.Element {
+          static get is() { return 'fake-person-grid'; }
+          fireSelect() {
+            this.dispatchEvent(new CustomEvent('on-select', {detail: "fake-person-grid-select"}));
+          }
+          fireAdd() {
+            this.dispatchEvent(new CustomEvent('on-add', {detail: "fake-person-grid-add"}));
+          }
+          setItems() {}
+        }
+        customElements.define(FakePersonGrid.is, FakePersonGrid);
+      </script>
+    </dom-module>
+    <dom-module id="fake-person-editor">
+      <template></template>
+      <script>
+        class FakePersonEditor extends Polymer.Element {
+          static get is() { return 'fake-person-editor'; }
+          fireUpdate() {
+            this.dispatchEvent(new CustomEvent('on-update', {detail: "fake-person-editor-update"}));
+          }
+          fireCreate() {
+            this.dispatchEvent(new CustomEvent('on-create', {detail: "fake-person-editor-create"}));
+          }
+          fireDelete() {
+            this.dispatchEvent(new CustomEvent('on-delete', {detail: "fake-person-editor-delete"}));
+          }
+          setPerson() {}
+          setFocus() {}
+        }
+        customElements.define(FakePersonEditor.is, FakePersonEditor);
+      </script>
+    </dom-module>
+    <dom-module id="fake-person-chart">
+      <template></template>
+      <script>
+        class FakePersonChart extends Polymer.Element {
+          static get is() { return 'fake-person-chart'; }
+          updateStats() {}
+        }
+        customElements.define(FakePersonChart.is, FakePersonChart);
+      </script>
+    </dom-module>
+
+    <test-fixture id="Basic">
+      <template>
+        <polymer-wc-app></polymer-wc-app>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('polymer-wc-app', () => {
+        let spy,
+            element, elementShadowRoot, splitLayout,
+            data, search, personGrid, editor, chart;
+
+        setup(() => {
+          replace('person-data').with('fake-person-data');
+          replace('person-search').with('fake-person-search');
+          replace('person-grid').with('fake-person-grid');
+          replace('person-editor').with('fake-person-editor');
+          replace('person-chart').with('fake-person-chart');
+
+          element = fixture('Basic');
+          elementShadowRoot = element.shadowRoot;
+          data = elementShadowRoot.getElementById('data');
+          search = elementShadowRoot.getElementById('search');
+          personGrid = elementShadowRoot.getElementById('personGrid');
+          editor = elementShadowRoot.getElementById('editor');
+          chart = elementShadowRoot.getElementById('chart');
+        });
+
+        test('instantiating the element works', () => {
+          splitLayout = elementShadowRoot.querySelector('vaadin-split-layout');
+          assert.equal(splitLayout.id, 'topLayout');
+        });
+
+        // TODO: test ?resetdemo
+
+        test('installing the app works', () => {
+          // TODO: fix the test to spy on ready
+          // spy = sinon.spy(data, 'installDemo');
+          // assert.isTrue(spy.called);
+        });
+
+        test('refreshing data in person-data passes value to person-grid', done => {
+          spy = sinon.spy(personGrid, 'setItems');
+          data.addEventListener('on-data', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-data-data");
+            done();
+          });
+          data.fireData();
+        });
+
+        test('selecting in person-grid passes value to person-editor', done => {
+          spy = sinon.spy(editor, 'setPerson');
+          let spy1 = sinon.spy(data, 'setSelection');
+          personGrid.addEventListener('on-select', event => {
+            assert.isTrue(spy.called);
+            assert.isTrue(spy1.called);
+            assert.equal(event.detail, "fake-person-grid-select");
+            done();
+          });
+          personGrid.fireSelect();
+        });
+
+        test('adding in person-grid sets focus on editor', done => {
+          spy = sinon.spy(editor, 'setFocus');
+          personGrid.addEventListener('on-add', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-grid-add");
+            done();
+          });
+          personGrid.fireAdd();
+        });
+
+        test('changing stats in person-data updates chart stats', done => {
+          spy = sinon.spy(chart, 'updateStats');
+          data.addEventListener('on-stats', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-data-stats");
+            done();
+          });
+          element.wide=true;
+          data.fireStats();
+        });
+
+        test('changing stats in person-data does not update chart when hidden', done => {
+          spy = sinon.spy(chart, 'updateStats');
+          data.addEventListener('on-stats', event => {
+            assert.isFalse(spy.called);
+            assert.equal(event.detail, "fake-person-data-stats");
+            done();
+          });
+          element.wide=false;
+          data.fireStats();
+        });
+
+        test('updating request from editor updates person-data', done => {
+          spy = sinon.spy(data, 'update');
+          editor.addEventListener('on-update', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-editor-update");
+            done();
+          });
+          editor.fireUpdate();
+        });
+
+        test('creating request from editor adds new person in person-data', done => {
+          spy = sinon.spy(data, 'create');
+          editor.addEventListener('on-create', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-editor-create");
+            done();
+          });
+          editor.fireCreate();
+        });
+
+        test('creating request from editor adds new person in person-data', done => {
+          spy = sinon.spy(data, 'create');
+          editor.addEventListener('on-create', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-editor-create");
+            done();
+          });
+          editor.fireCreate();
+        });
+
+        test('deleting request from editor delets person in person-data', done => {
+          spy = sinon.spy(data, 'delete');
+          editor.addEventListener('on-delete', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-editor-delete");
+            done();
+          });
+          editor.fireDelete();
+        });
+
+        test('searching request searches in person-data', done => {
+          spy = sinon.spy(data, 'search');
+          search.addEventListener('on-find', event => {
+            assert.isTrue(spy.called);
+            assert.equal(event.detail, "fake-person-search-find");
+            done();
+          });
+          search.fireFind();
+        });
+
+        test('changing elements responsively', () => {
+          let gridArea=elementShadowRoot.getElementById('gridArea'),
+              editorArea=elementShadowRoot.getElementById('editorArea'),
+              wideLayoutAttr='wide-layout';
+
+          element.wide=false;
+          assert.isTrue(chart.hidden);
+          assert.isFalse(gridArea.hasAttribute(wideLayoutAttr));
+          assert.isFalse(editorArea.hasAttribute(wideLayoutAttr));
+          assert.equal(splitLayout.orientation, "vertical");
+
+          element.wide=true;
+          assert.isFalse(chart.hidden);
+          assert.isTrue(gridArea.hasAttribute(wideLayoutAttr));
+          assert.isTrue(editorArea.hasAttribute(wideLayoutAttr));
+          // TODO: splitLayout.orientation takes sometime to update
+          assert.equal(element.orientation, "horizontal");
+        });
+      });
+    </script>
+  </body>
+</html>

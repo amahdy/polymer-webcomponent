@@ -1,0 +1,7 @@
+{
+  "name": "polymer-wc-app",
+  "short_name": "polymer-wc-app",
+  "description": "Polymer App with WebComponents",
+  "start_url": "/",
+  "display": "standalone"
+}
