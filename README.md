@@ -36,11 +36,11 @@ The application will be available on this address by default: [http://localhost:
 
 ### Resetting Local Modiciations
 
-Modifications done in the app are persisted in the brwoser, you can reset them using `?resetdemo`, for example: [http://localhost:8080/?resetdemo](http://localhost:8080/?resetdemo)
+Modifications done in the app are persisted in the brwoser, you can reset them using `?resetdemo`, for example: [http://localhost:8080/?resetdemo](http://localhost:8080/?resetdemo).
 
 ### Running Tests
 
-Tests can be run locally by visiting this URL: [http://localhost:8080/components/polymer-wc-app/test/](http://localhost:8081/components/polymer-wc-app/test/).
+Tests can be run locally by visiting this URL: [http://localhost:8080/components/polymer-wc-app/test/](http://localhost:8080/components/polymer-wc-app/test/).
 
 You can also run tests using command line
 ```bash
