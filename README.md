@@ -22,7 +22,6 @@ Install Bower dependencies
 ```bash
 $ polymer install
 ```
-
 ### Running Your Application
 
 Start the application on port 8080
@@ -43,6 +42,7 @@ Modifications done in the app are persisted in the brwoser, you can reset them u
 Tests can be run locally by visiting this URL: [http://localhost:8080/components/polymer-wc-app/test/](http://localhost:8080/components/polymer-wc-app/test/).
 
 You can also run tests using command line
+
 ```bash
 $ polymer test
 ```
